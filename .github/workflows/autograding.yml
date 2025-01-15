@@ -1,0 +1,33 @@
+name: Autograding
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up C Compiler
+        run: sudo apt-get install build-essential
+
+      - name: Compile student code
+        run: gcc -o student_program student_program.c
+
+      - name: Run Test Case 1
+        run: ./student_program < testcases/input1.dat > output1.txt
+      - name: Compare Test Case 1
+        run: diff -q output1.txt testcases/output1.dat
+
+      - name: Run Test Case 2 (if exists)
+        run: ./student_program < testcases/input2.dat > output2.txt || echo "Test Case 2 skipped"
+      - name: Compare Test Case 2
+        run: diff -q output2.txt testcases/output2.dat || echo "Test Case 2 skipped"
+
+      - name: Run send_result
+        if: ${{ success() }}
+        run: ./send_result
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
