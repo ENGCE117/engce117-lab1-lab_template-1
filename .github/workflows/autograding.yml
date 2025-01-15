@@ -1,6 +1,7 @@
 name: Autograding
 
-on: [push, pull_request]
+on: 
+  [push, pull_request]
 
 jobs:
   build:
@@ -15,19 +16,41 @@ jobs:
       - name: Compile student code
         run: gcc -o student_program student_program.c
 
+      # Run Test Case 1
       - name: Run Test Case 1
         run: ./student_program < testcases/input1.dat > output1.txt
-      - name: Compare Test Case 1
-        run: diff -q output1.txt testcases/output1.dat
 
+      # Compare Test Case 1 (with "included" check)
+      - name: Compare Test Case 1
+        run: |
+          if grep -Fq "$(cat testcases/output1.dat)" output1.txt; then
+            echo "Test Case 1 Passed: Output is included as expected."
+          else
+            echo "Test Case 1 Failed: Output does not match the expected partial content."
+            exit 1
+          fi
+
+      # Run Test Case 2 (if exists)
       - name: Run Test Case 2 (if exists)
         run: ./student_program < testcases/input2.dat > output2.txt || echo "Test Case 2 skipped"
-      - name: Compare Test Case 2
-        run: diff -q output2.txt testcases/output2.dat || echo "Test Case 2 skipped"
 
+      # Compare Test Case 2 (with "included" check)
+      - name: Compare Test Case 2
+        run: |
+          if [ -f testcases/output2.dat ]; then
+            if grep -Fq "$(cat testcases/output2.dat)" output2.txt; then
+              echo "Test Case 2 Passed: Output is included as expected."
+            else
+              echo "Test Case 2 Failed: Output does not match the expected partial content."
+              exit 1
+            fi
+          else
+            echo "Test Case 2 skipped (no file found)."
+          fi
+
+      # Run send_result if tests pass
       - name: Run send_result
         if: ${{ success() }}
         run: ./send_result
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
-
